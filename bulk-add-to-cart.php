@@ -745,70 +745,252 @@ function bulk_add_to_cart_documentation_page() {
     <div class="wrap" style="max-width: 100%;">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
+        <!-- Quick Start Guide -->
         <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
             <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                <span class="dashicons dashicons-book" style="margin-right: 5px;"></span>
-                <?php _e('How to Use', 'bulk-add-to-cart'); ?>
+                <span class="dashicons dashicons-admin-tools" style="margin-right: 5px;"></span>
+                <?php _e('Quick Start Guide', 'bulk-add-to-cart'); ?>
             </h2>
             <div style="margin-top: 15px;">
-                <h3><?php _e('Setting Up the Upload Form', 'bulk-add-to-cart'); ?></h3>
+                <h3><?php _e('1. Installation and Setup', 'bulk-add-to-cart'); ?></h3>
                 <ol>
-                    <li><?php _e('Add the shortcode [bulk_add_to_cart] to any page or post where you want the upload form to appear', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Make sure the page/post is accessible to logged-in users', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Upload bulk-add-to-cart.php to your WordPress plugins directory', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Activate the plugin in WordPress admin', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Go to Bulk Add to Cart > Settings and configure your CSV column headers', 'bulk-add-to-cart'); ?></li>
                 </ol>
 
-                <h3><?php _e('Configuring CSV Column Headers', 'bulk-add-to-cart'); ?></h3>
-                <ol>
-                    <li><?php _e('Go to Bulk Add to Cart > Settings in the WordPress admin', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Configure the following settings:', 'bulk-add-to-cart'); ?></li>
-                    <ul>
-                        <li><?php _e('Product Identifier Column: Enter the exact column header name from your CSV that contains the product identifier', 'bulk-add-to-cart'); ?></li>
-                        <li><?php _e('Identifier Type: Select what type of identifier your CSV column contains (Product ID, SKU, Slug, Title, or Custom Meta Field Value)', 'bulk-add-to-cart'); ?></li>
-                        <li><?php _e('Meta Field Name: If using Custom Meta Field Value, enter the name of the meta field that contains the unique identifier', 'bulk-add-to-cart'); ?></li>
-                        <li><?php _e('Quantity Column: Enter the exact column header name from your CSV that contains the quantity', 'bulk-add-to-cart'); ?></li>
-                        <li><?php _e('Debug Mode: Enable to see detailed processing information during imports', 'bulk-add-to-cart'); ?></li>
-                    </ul>
-                </ol>
+                <h3><?php _e('2. Add Upload Form', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('Add the shortcode to any page or post:', 'bulk-add-to-cart'); ?></p>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">[bulk_add_to_cart]</pre>
 
-                <h3><?php _e('Preparing Your CSV File', 'bulk-add-to-cart'); ?></h3>
-                <ol>
-                    <li><?php _e('Create a CSV file with the configured column headers (in any order)', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('The column headers must exactly match what you configured in the settings', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Example CSV format:', 'bulk-add-to-cart'); ?></li>
-                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
+                <h3><?php _e('3. Prepare CSV File', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('Create a CSV file with your product data:', 'bulk-add-to-cart'); ?></p>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
 <?php
 $options = get_option('bulk_add_to_cart_settings');
 $identifier_column = isset($options['identifier_column']) ? $options['identifier_column'] : 'product_id';
 $quantity_column = isset($options['quantity_column']) ? $options['quantity_column'] : 'quantity';
 echo esc_html($identifier_column . ',' . $quantity_column . "\n");
 echo esc_html('123,2' . "\n");
-echo esc_html('ABC-123,1' . "\n");
+echo esc_html('456,1' . "\n");
+echo esc_html('789,3' . "\n");
 ?>
-                    </pre>
-                </ol>
+                </pre>
+            </div>
+        </div>
 
-                <h3><?php _e('Using the Upload Form', 'bulk-add-to-cart'); ?></h3>
-                <ol>
-                    <li><?php _e('Log in to your WordPress account', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Navigate to the page with the upload form', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Select your CSV file', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Click "Add to Cart"', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Review the results message showing successful additions and any errors', 'bulk-add-to-cart'); ?></li>
-                </ol>
+        <!-- Supported Identifier Types -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-list-view" style="margin-right: 5px;"></span>
+                <?php _e('Supported Identifier Types', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Type', 'bulk-add-to-cart'); ?></th>
+                            <th><?php _e('Description', 'bulk-add-to-cart'); ?></th>
+                            <th><?php _e('CSV Example', 'bulk-add-to-cart'); ?></th>
+                            <th><?php _e('Use Case', 'bulk-add-to-cart'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>product_id</code></td>
+                            <td><?php _e('Product ID', 'bulk-add-to-cart'); ?></td>
+                            <td><code>123</code></td>
+                            <td><?php _e('Direct product ID lookup', 'bulk-add-to-cart'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><code>product_sku</code></td>
+                            <td><?php _e('Product SKU', 'bulk-add-to-cart'); ?></td>
+                            <td><code>ABC-123</code></td>
+                            <td><?php _e('SKU-based identification', 'bulk-add-to-cart'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><code>product_slug</code></td>
+                            <td><?php _e('Product slug', 'bulk-add-to-cart'); ?></td>
+                            <td><code>my-product</code></td>
+                            <td><?php _e('URL-friendly identifiers', 'bulk-add-to-cart'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><code>product_title</code></td>
+                            <td><?php _e('Product title', 'bulk-add-to-cart'); ?></td>
+                            <td><code>My Product Name</code></td>
+                            <td><?php _e('Human-readable names', 'bulk-add-to-cart'); ?></td>
+                        </tr>
+                        <tr>
+                            <td><code>meta_field</code></td>
+                            <td><?php _e('Custom meta field', 'bulk-add-to-cart'); ?></td>
+                            <td><code>CUSTOM-001</code></td>
+                            <td><?php _e('Custom identifiers', 'bulk-add-to-cart'); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <h3><?php _e('Viewing Import History', 'bulk-add-to-cart'); ?></h3>
+        <!-- CSV Format Examples -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-media-spreadsheet" style="margin-right: 5px;"></span>
+                <?php _e('CSV Format Examples', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                
+                <h3><?php _e('Example 1: Product ID with Quantity', 'bulk-add-to-cart'); ?></h3>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">product_id,quantity
+123,2
+456,1
+789,3</pre>
+
+                <h3><?php _e('Example 2: SKU with Quantity', 'bulk-add-to-cart'); ?></h3>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">sku,quantity
+ABC-123,2
+DEF-456,1
+GHI-789,3</pre>
+
+                <h3><?php _e('Example 3: Product Title with Quantity', 'bulk-add-to-cart'); ?></h3>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">product_title,quantity
+"Widget A",2
+"Widget B",1
+"Widget C",3</pre>
+
+                <h3><?php _e('Example 4: Custom Meta Field', 'bulk-add-to-cart'); ?></h3>
+                <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px;">custom_id,quantity
+CUSTOM-001,2
+CUSTOM-002,1
+CUSTOM-003,3</pre>
+            </div>
+        </div>
+
+        <!-- Advanced Configuration -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-admin-settings" style="margin-right: 5px;"></span>
+                <?php _e('Advanced Configuration', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                
+                <h3><?php _e('Debug Mode', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('Enable debug mode in settings to see detailed processing information:', 'bulk-add-to-cart'); ?></p>
+                <ul>
+                    <li><?php _e('CSV headers detected', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Column indices found', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Product lookup results', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Processing details for each row', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('Redirect to Cart', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('Enable automatic redirect to cart after successful import in the settings.', 'bulk-add-to-cart'); ?></p>
+
+                <h3><?php _e('Custom Meta Field Integration', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('To use custom meta fields:', 'bulk-add-to-cart'); ?></p>
                 <ol>
-                    <li><?php _e('Go to Bulk Add to Cart > Import History in the WordPress admin', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('View a list of all previous imports with success and error counts', 'bulk-add-to-cart'); ?></li>
-                    <li><?php _e('Click on the success or error count buttons to see detailed information about what was added or what went wrong', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Add custom meta fields to your products', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Set Identifier Type to "meta_field"', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Enter the meta field name in settings', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Use the meta field values in your CSV', 'bulk-add-to-cart'); ?></li>
                 </ol>
             </div>
         </div>
 
+        <!-- Error Handling -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-warning" style="margin-right: 5px;"></span>
+                <?php _e('Error Handling and Troubleshooting', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                
+                <h3><?php _e('Common Error Scenarios', 'bulk-add-to-cart'); ?></h3>
+                
+                <h4><?php _e('1. "Product not found" Errors', 'bulk-add-to-cart'); ?></h4>
+                <p><strong><?php _e('Cause:', 'bulk-add-to-cart'); ?></strong> <?php _e('Product identifier doesn\'t match any products in WooCommerce', 'bulk-add-to-cart'); ?></p>
+                <p><strong><?php _e('Solutions:', 'bulk-add-to-cart'); ?></strong></p>
+                <ul>
+                    <li><?php _e('Verify the product exists in WooCommerce', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Check the identifier type setting', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Ensure CSV column headers match settings', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify the identifier format (ID, SKU, slug, title)', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h4><?php _e('2. "Insufficient stock" Errors', 'bulk-add-to-cart'); ?></h4>
+                <p><strong><?php _e('Cause:', 'bulk-add-to-cart'); ?></strong> <?php _e('Requested quantity exceeds available stock', 'bulk-add-to-cart'); ?></p>
+                <p><strong><?php _e('Solutions:', 'bulk-add-to-cart'); ?></strong></p>
+                <ul>
+                    <li><?php _e('Check product stock levels', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify stock management is enabled', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Reduce requested quantities', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Restock products', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h4><?php _e('3. "Security check failed" Errors', 'bulk-add-to-cart'); ?></h4>
+                <p><strong><?php _e('Cause:', 'bulk-add-to-cart'); ?></strong> <?php _e('Nonce verification failure or form submission issues', 'bulk-add-to-cart'); ?></p>
+                <p><strong><?php _e('Solutions:', 'bulk-add-to-cart'); ?></strong></p>
+                <ul>
+                    <li><?php _e('Ensure form is submitted from correct page', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Check for JavaScript conflicts', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify nonce field is present', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Clear browser cache', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h4><?php _e('4. "Invalid CSV format" Errors', 'bulk-add-to-cart'); ?></h4>
+                <p><strong><?php _e('Cause:', 'bulk-add-to-cart'); ?></strong> <?php _e('CSV file format issues', 'bulk-add-to-cart'); ?></p>
+                <p><strong><?php _e('Solutions:', 'bulk-add-to-cart'); ?></strong></p>
+                <ul>
+                    <li><?php _e('Ensure file is actually CSV format', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Check for empty rows at beginning', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify column headers match settings', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Use proper CSV encoding', 'bulk-add-to-cart'); ?></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-star-filled" style="margin-right: 5px;"></span>
+                <?php _e('Best Practices', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                
+                <h3><?php _e('CSV File Preparation', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><?php _e('Always include headers in your CSV file', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Use consistent column names', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Avoid empty rows', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify product identifiers exist before import', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Check stock levels before import', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Use descriptive file names', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('Performance Optimization', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><?php _e('Process files in smaller batches', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Monitor memory usage', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Enable debug mode for troubleshooting', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Monitor import history', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Use secure file uploads', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('Error Prevention', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><?php _e('Test with small files first', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Verify settings configuration', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Check error handling', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Review import history regularly', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Monitor error rates', 'bulk-add-to-cart'); ?></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FAQ -->
         <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
             <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
                 <span class="dashicons dashicons-editor-help" style="margin-right: 5px;"></span>
-                <?php _e('FAQ', 'bulk-add-to-cart'); ?>
+                <?php _e('Frequently Asked Questions', 'bulk-add-to-cart'); ?>
             </h2>
             <div style="margin-top: 15px;">
                 <h3><?php _e('Q: What file format is supported?', 'bulk-add-to-cart'); ?></h3>
@@ -831,6 +1013,54 @@ echo esc_html('ABC-123,1' . "\n");
 
                 <h3><?php _e('Q: What is the Custom Meta Field Value identifier type?', 'bulk-add-to-cart'); ?></h3>
                 <p><?php _e('A: This option allows you to identify products using a custom meta field value. You must specify the meta field name in the settings, and the CSV values must match the values stored in this meta field.', 'bulk-add-to-cart'); ?></p>
+
+                <h3><?php _e('Q: How can I access import history programmatically?', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('A: You can access import history using WordPress options: get_option(\'bulk_add_to_cart_history\', array())', 'bulk-add-to-cart'); ?></p>
+
+                <h3><?php _e('Q: Can I customize the upload form styling?', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('A: Yes, the form uses inline styles that can be overridden with custom CSS. The main container has the class "bulk-add-to-cart-form".', 'bulk-add-to-cart'); ?></p>
+
+                <h3><?php _e('Q: What security measures are in place?', 'bulk-add-to-cart'); ?></h3>
+                <p><?php _e('A: The plugin includes nonce verification, file type validation, user authentication checks, and input sanitization throughout.', 'bulk-add-to-cart'); ?></p>
+            </div>
+        </div>
+
+        <!-- API Reference -->
+        <div class="card" style="max-width: 100%; margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+            <h2 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <span class="dashicons dashicons-admin-tools" style="margin-right: 5px;"></span>
+                <?php _e('Developer Reference', 'bulk-add-to-cart'); ?>
+            </h2>
+            <div style="margin-top: 15px;">
+                
+                <h3><?php _e('Available Functions', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><code>bulk_add_to_cart_shortcode()</code> - <?php _e('Renders the upload form', 'bulk-add-to-cart'); ?></li>
+                    <li><code>bulk_add_to_cart_process_upload()</code> - <?php _e('Handles file processing', 'bulk-add-to-cart'); ?></li>
+                    <li><code>bulk_add_to_cart_reorder_notices()</code> - <?php _e('Reorders WooCommerce notices', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('WordPress Options', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><code>bulk_add_to_cart_settings</code> - <?php _e('Plugin settings array', 'bulk-add-to-cart'); ?></li>
+                    <li><code>bulk_add_to_cart_history</code> - <?php _e('Import history array', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('Hooks and Filters', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><code>admin_menu</code> - <?php _e('Registers admin menu pages', 'bulk-add-to-cart'); ?></li>
+                    <li><code>admin_init</code> - <?php _e('Registers plugin settings', 'bulk-add-to-cart'); ?></li>
+                    <li><code>template_redirect</code> - <?php _e('Handles file processing', 'bulk-add-to-cart'); ?></li>
+                    <li><code>woocommerce_get_notices</code> - <?php _e('Reorders notices (priority 20)', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
+                <h3><?php _e('Constants', 'bulk-add-to-cart'); ?></h3>
+                <ul>
+                    <li><code>BULK_ADD_TO_CART_VERSION</code> - <?php _e('Plugin version', 'bulk-add-to-cart'); ?></li>
+                    <li><code>BULK_ADD_TO_CART_PLUGIN_DIR</code> - <?php _e('Plugin directory path', 'bulk-add-to-cart'); ?></li>
+                    <li><code>BULK_ADD_TO_CART_PLUGIN_URL</code> - <?php _e('Plugin URL', 'bulk-add-to-cart'); ?></li>
+                    <li><code>BULK_ADD_TO_CART_UPLOAD_DIR</code> - <?php _e('Upload directory path', 'bulk-add-to-cart'); ?></li>
+                </ul>
             </div>
         </div>
     </div>
