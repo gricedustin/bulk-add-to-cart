@@ -3,7 +3,7 @@
  * Plugin Name: Bulk Add to Cart
  * Plugin URI: 
  * Description: A powerful WordPress plugin that allows users to bulk add products to their WooCommerce cart using CSV files. Features include support for product IDs, SKUs, slugs, and titles, variation handling, inventory checking, and import history tracking. Perfect for bulk orders and inventory management.
- * Version: 1.1.1
+ * Version: 1.2.0
  * Author: Grice AI
  * Author URI: https://imprintengine.com
  * License: GPL v2 or later
@@ -21,7 +21,7 @@ if (!defined('WPINC')) {
 }
 
 // Define plugin constants
-define('BULK_ADD_TO_CART_VERSION', '1.1.1');
+define('BULK_ADD_TO_CART_VERSION', '1.2.0');
 define('BULK_ADD_TO_CART_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('BULK_ADD_TO_CART_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('BULK_ADD_TO_CART_UPLOAD_DIR', WP_CONTENT_DIR . '/bulk-add-to-cart-import-files/');
@@ -304,15 +304,162 @@ function bulk_add_to_cart_shortcode() {
     $output .= '</ol>';
     $output .= '</div>';
 
+    // Loading bar container (initially hidden)
+    $output .= '<div id="bulk-add-loading" style="display: none; margin-bottom: 20px; padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px;">';
+    $output .= '<h3 style="margin-top: 0; color: #007cba;">' . __('Processing Products...', 'bulk-add-to-cart') . '</h3>';
+    $output .= '<div style="margin-bottom: 10px;">';
+    $output .= '<div id="bulk-add-progress-bar" style="width: 100%; height: 20px; background-color: #e0e0e0; border-radius: 10px; overflow: hidden;">';
+    $output .= '<div id="bulk-add-progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #007cba, #005a87); transition: width 0.3s ease;"></div>';
+    $output .= '</div>';
+    $output .= '</div>';
+    $output .= '<div id="bulk-add-progress-text" style="text-align: center; font-weight: bold; color: #007cba;">0%</div>';
+    $output .= '<div id="bulk-add-current-product" style="margin-top: 10px; text-align: center; color: #666; font-style: italic;"></div>';
+    $output .= '</div>';
+
+    // Results container (initially hidden)
+    $output .= '<div id="bulk-add-results" style="display: none; margin-bottom: 20px; padding: 15px; border-radius: 4px;"></div>';
+
     // Form
-    $output .= '<form method="post" enctype="multipart/form-data" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
+    $output .= '<form id="bulk-add-form" method="post" enctype="multipart/form-data" action="' . esc_url($_SERVER['REQUEST_URI']) . '">';
     $output .= wp_nonce_field('bulk_add_to_cart_upload', 'bulk_add_to_cart_nonce', true, false);
     $output .= '<div style="margin-bottom: 20px;">';
     $output .= '<label for="csv_file" style="display: block; margin-bottom: 10px; font-weight: bold;">' . __('Select CSV File:', 'bulk-add-to-cart') . '</label>';
     $output .= '<input type="file" name="csv_file" id="csv_file" accept=".csv" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">';
     $output .= '</div>';
-    $output .= '<button type="submit" name="bulk_add_to_cart_submit" class="button button-primary" style="padding: 10px 20px;">' . __('Add to Cart', 'bulk-add-to-cart') . '</button>';
+    $output .= '<button type="submit" name="bulk_add_to_cart_submit" id="bulk-add-submit" class="button button-primary" style="padding: 10px 20px;">' . __('Add to Cart', 'bulk-add-to-cart') . '</button>';
     $output .= '</form>';
+
+    // JavaScript for AJAX processing with enhanced progress tracking
+    $output .= '<script type="text/javascript">
+    jQuery(document).ready(function($) {
+        $("#bulk-add-form").on("submit", function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            formData.append("action", "bulk_add_to_cart_ajax");
+            formData.append("ajax_nonce", "' . wp_create_nonce('bulk_add_to_cart_ajax') . '");
+            
+            // Show loading bar
+            $("#bulk-add-loading").show();
+            $("#bulk-add-results").hide();
+            $("#bulk-add-submit").prop("disabled", true).text("' . __('Processing...', 'bulk-add-to-cart') . '");
+            
+            // Reset progress
+            $("#bulk-add-progress-fill").css("width", "0%");
+            $("#bulk-add-progress-text").text("0%");
+            $("#bulk-add-current-product").text("' . __('Preparing to process...', 'bulk-add-to-cart') . '");
+            
+            // Start progress animation
+            var progressInterval = setInterval(function() {
+                var currentWidth = parseInt($("#bulk-add-progress-fill").css("width"));
+                var maxWidth = $("#bulk-add-progress-bar").width();
+                var increment = maxWidth * 0.01; // 1% increment
+                
+                if (currentWidth < maxWidth * 0.95) { // Stop at 95% until completion
+                    var newWidth = currentWidth + increment;
+                    var percentage = Math.round((newWidth / maxWidth) * 100);
+                    $("#bulk-add-progress-fill").css("width", newWidth + "px");
+                    $("#bulk-add-progress-text").text(percentage + "%");
+                }
+            }, 100);
+            
+            $.ajax({
+                url: "' . admin_url('admin-ajax.php') . '",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#bulk-add-current-product").text("' . __('Uploading file...', 'bulk-add-to-cart') . '");
+                },
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    xhr.addEventListener("progress", function(evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = evt.loaded / evt.total;
+                            var progressWidth = percentComplete * 100;
+                            $("#bulk-add-progress-fill").css("width", progressWidth + "%");
+                            $("#bulk-add-progress-text").text(Math.round(progressWidth) + "%");
+                            
+                            if (percentComplete < 0.5) {
+                                $("#bulk-add-current-product").text("' . __('Uploading file...', 'bulk-add-to-cart') . '");
+                            } else if (percentComplete < 0.8) {
+                                $("#bulk-add-current-product").text("' . __('Processing CSV data...', 'bulk-add-to-cart') . '");
+                            } else {
+                                $("#bulk-add-current-product").text("' . __('Adding products to cart...', 'bulk-add-to-cart') . '");
+                            }
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function(response) {
+                    clearInterval(progressInterval);
+                    
+                    // Complete the progress bar
+                    $("#bulk-add-progress-fill").css("width", "100%");
+                    $("#bulk-add-progress-text").text("100%");
+                    $("#bulk-add-current-product").text("' . __('Processing complete!', 'bulk-add-to-cart') . '");
+                    
+                    setTimeout(function() {
+                        if (response.success) {
+                            var results = response.data;
+                            var resultsHtml = "<div style=\\"padding: 15px; border-radius: 4px;\\">";
+                            
+                            if (results.success_count > 0) {
+                                resultsHtml += "<div style=\\"margin-bottom: 15px; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; color: #155724;\\">";
+                                resultsHtml += "<strong>" + results.success_count + " " + (results.success_count === 1 ? "' . __('product added to cart.', 'bulk-add-to-cart') . '" : "' . __('products added to cart.', 'bulk-add-to-cart') . '") + "</strong>";
+                                if (results.successful_additions && Object.keys(results.successful_additions).length > 0) {
+                                    resultsHtml += "<ul style=\\"margin: 10px 0 0 20px;\\">";
+                                    for (var product in results.successful_additions) {
+                                        resultsHtml += "<li>" + product + ": " + results.successful_additions[product] + "</li>";
+                                    }
+                                    resultsHtml += "</ul>";
+                                }
+                                resultsHtml += "</div>";
+                            }
+                            
+                            if (results.error_count > 0) {
+                                resultsHtml += "<div style=\\"padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;\\">";
+                                resultsHtml += "<strong>" + results.error_count + " " + (results.error_count === 1 ? "' . __('product could not be added.', 'bulk-add-to-cart') . '" : "' . __('products could not be added.', 'bulk-add-to-cart') . '") + "</strong>";
+                                if (results.errors && results.errors.length > 0) {
+                                    resultsHtml += "<ul style=\\"margin: 10px 0 0 20px;\\">";
+                                    for (var i = 0; i < results.errors.length; i++) {
+                                        resultsHtml += "<li>" + results.errors[i] + "</li>";
+                                    }
+                                    resultsHtml += "</ul>";
+                                }
+                                resultsHtml += "</div>";
+                            }
+                            
+                            resultsHtml += "</div>";
+                            $("#bulk-add-results").html(resultsHtml).show();
+                            
+                            // Redirect if enabled
+                            if (results.redirect_url) {
+                                setTimeout(function() {
+                                    window.location.href = results.redirect_url;
+                                }, 2000);
+                            }
+                        } else {
+                            $("#bulk-add-results").html("<div style=\\"padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;\\"><strong>' . __('Error:', 'bulk-add-to-cart') . '</strong> " + response.data + "</div>").show();
+                        }
+                    }, 500);
+                },
+                error: function() {
+                    clearInterval(progressInterval);
+                    $("#bulk-add-results").html("<div style=\\"padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;\\"><strong>' . __('Error:', 'bulk-add-to-cart') . '</strong> ' . __('An error occurred while processing the file.', 'bulk-add-to-cart') . '</div>").show();
+                },
+                complete: function() {
+                    setTimeout(function() {
+                        $("#bulk-add-loading").hide();
+                        $("#bulk-add-submit").prop("disabled", false).text("' . __('Add to Cart', 'bulk-add-to-cart') . '");
+                    }, 1000);
+                }
+            });
+        });
+    });
+    </script>';
+
     $output .= '</div>';
 
     return $output;
@@ -347,7 +494,234 @@ function bulk_add_to_cart_reorder_notices($notices) {
 }
 add_filter('woocommerce_get_notices', 'bulk_add_to_cart_reorder_notices', 20);
 
-// Handle CSV upload and processing
+// AJAX handler for bulk add to cart with progress updates
+function bulk_add_to_cart_ajax_handler() {
+    // Verify nonce
+    if (!isset($_POST['ajax_nonce']) || !wp_verify_nonce($_POST['ajax_nonce'], 'bulk_add_to_cart_ajax')) {
+        wp_send_json_error(__('Security check failed. Please try again.', 'bulk-add-to-cart'));
+    }
+
+    // Check if user is logged in
+    if (!is_user_logged_in()) {
+        wp_send_json_error(__('Please log in to use the bulk add to cart feature.', 'bulk-add-to-cart'));
+    }
+
+    // Check file upload
+    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        wp_send_json_error(__('Error uploading file. Please try again.', 'bulk-add-to-cart'));
+    }
+
+    // Initialize WooCommerce cart if not already done
+    if (!WC()->cart) {
+        WC()->cart = new WC_Cart();
+    }
+
+    $file = $_FILES['csv_file'];
+    $filename = sanitize_file_name($file['name']);
+    $timestamp = current_time('timestamp');
+    $new_filename = $timestamp . '-' . $filename;
+    $upload_path = BULK_ADD_TO_CART_UPLOAD_DIR . $new_filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
+        wp_send_json_error(__('Error saving file. Please try again.', 'bulk-add-to-cart'));
+    }
+
+    // Process CSV file
+    $handle = fopen($upload_path, 'r');
+    if (!$handle) {
+        wp_send_json_error(__('Error reading file. Please try again.', 'bulk-add-to-cart'));
+    }
+
+    $headers = fgetcsv($handle);
+    if (!$headers) {
+        fclose($handle);
+        wp_send_json_error(__('Invalid CSV format. Please check the file structure.', 'bulk-add-to-cart'));
+    }
+
+    // Get settings
+    $options = get_option('bulk_add_to_cart_settings');
+    $identifier_column = isset($options['identifier_column']) ? $options['identifier_column'] : 'product_id';
+    $identifier_type = isset($options['identifier_type']) ? $options['identifier_type'] : 'product_id';
+    $quantity_column = isset($options['quantity_column']) ? $options['quantity_column'] : 'quantity';
+    $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : '0';
+
+    // Find column indices
+    $identifier_index = array_search(strtolower($identifier_column), array_map('strtolower', $headers));
+    $quantity_index = array_search(strtolower($quantity_column), array_map('strtolower', $headers));
+
+    if ($identifier_index === false || $quantity_index === false) {
+        fclose($handle);
+        wp_send_json_error(sprintf(
+            __('Required columns not found. Looking for "%s" and "%s".', 'bulk-add-to-cart'),
+            $identifier_column,
+            $quantity_column
+        ));
+    }
+
+    // Count total rows for progress calculation
+    $total_rows = 0;
+    $temp_handle = fopen($upload_path, 'r');
+    fgetcsv($temp_handle); // Skip header
+    while (fgetcsv($temp_handle) !== false) {
+        $total_rows++;
+    }
+    fclose($temp_handle);
+
+    // Process rows
+    $success_count = 0;
+    $error_count = 0;
+    $errors = array();
+    $successful_additions = array();
+    $row_number = 1;
+    $processed_rows = 0;
+
+    while (($row = fgetcsv($handle)) !== false) {
+        $row_number++;
+        $processed_rows++;
+        $identifier = trim($row[$identifier_index]);
+        $quantity = intval($row[$quantity_index]);
+
+        if (empty($identifier) || $quantity <= 0) {
+            $error_count++;
+            $errors[] = sprintf(
+                __('Row %d: Invalid identifier or quantity (Identifier: "%s", Quantity: "%s")', 'bulk-add-to-cart'),
+                $row_number,
+                esc_html($identifier),
+                esc_html($row[$quantity_index])
+            );
+            continue;
+        }
+
+        $product = null;
+        switch ($identifier_type) {
+            case 'product_id':
+                $product = wc_get_product($identifier);
+                break;
+            case 'product_sku':
+                $product_id = wc_get_product_id_by_sku($identifier);
+                $product = $product_id ? wc_get_product($product_id) : null;
+                break;
+            case 'product_slug':
+                $product_id = wc_get_product_id_by_slug($identifier);
+                $product = $product_id ? wc_get_product($product_id) : null;
+                break;
+            case 'product_title':
+                global $wpdb;
+                $product_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT ID FROM {$wpdb->posts} WHERE post_title = %s AND post_type = 'product'",
+                    $identifier
+                ));
+                $product = $product_id ? wc_get_product($product_id) : null;
+                break;
+            case 'meta_field':
+                global $wpdb;
+                $meta_field_name = isset($options['meta_field_name']) ? $options['meta_field_name'] : '';
+                if (!empty($meta_field_name)) {
+                    $product_id = $wpdb->get_var($wpdb->prepare(
+                        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s",
+                        $meta_field_name,
+                        $identifier
+                    ));
+                    $product = $product_id ? wc_get_product($product_id) : null;
+                }
+                break;
+        }
+
+        if (!$product) {
+            $error_count++;
+            $errors[] = sprintf(
+                __('Row %d: Product not found: %s (Quantity: %s)', 'bulk-add-to-cart'),
+                $row_number,
+                esc_html($identifier),
+                esc_html($quantity)
+            );
+            continue;
+        }
+
+        if (!$product->is_purchasable()) {
+            $error_count++;
+            $errors[] = sprintf(
+                __('Row %d: Product not purchasable: %s (Quantity: %s)', 'bulk-add-to-cart'),
+                $row_number,
+                esc_html($identifier),
+                esc_html($quantity)
+            );
+            continue;
+        }
+
+        // Check stock
+        if ($product->managing_stock() && !$product->has_enough_stock($quantity)) {
+            $error_count++;
+            $errors[] = sprintf(
+                __('Row %d: Insufficient stock for: %s (Requested: %s, Available: %s)', 'bulk-add-to-cart'),
+                $row_number,
+                esc_html($identifier),
+                esc_html($quantity),
+                esc_html($product->get_stock_quantity())
+            );
+            continue;
+        }
+
+        // Add to cart
+        $cart_item_key = WC()->cart->add_to_cart($product->get_id(), $quantity);
+        if ($cart_item_key) {
+            $success_count++;
+            // Track successful additions
+            $product_name = $product->get_name();
+            if (!isset($successful_additions[$product_name])) {
+                $successful_additions[$product_name] = 0;
+            }
+            $successful_additions[$product_name] += $quantity;
+        } else {
+            $error_count++;
+            $errors[] = sprintf(
+                __('Row %d: Failed to add to cart: %s (Quantity: %s)', 'bulk-add-to-cart'),
+                $row_number,
+                esc_html($identifier),
+                esc_html($quantity)
+            );
+        }
+    }
+
+    fclose($handle);
+
+    // Record import history
+    $current_user = wp_get_current_user();
+    $history = get_option('bulk_add_to_cart_history', array());
+    array_unshift($history, array(
+        'timestamp' => current_time('mysql'),
+        'user_id' => $current_user->ID,
+        'username' => $current_user->user_login,
+        'filename' => $new_filename,
+        'success_count' => $success_count,
+        'error_count' => $error_count,
+        'errors' => $errors,
+        'successes' => $successful_additions
+    ));
+    $history = array_slice($history, 0, 100); // Keep only last 100 entries
+    update_option('bulk_add_to_cart_history', $history);
+
+    // Prepare response
+    $response = array(
+        'success_count' => $success_count,
+        'error_count' => $error_count,
+        'errors' => $errors,
+        'successful_additions' => $successful_additions,
+        'total_processed' => $processed_rows
+    );
+
+    // Add redirect URL if enabled
+    $options = get_option('bulk_add_to_cart_settings');
+    if (isset($options['redirect_to_cart']) && $options['redirect_to_cart'] === '1') {
+        $response['redirect_url'] = wc_get_cart_url();
+    }
+
+    wp_send_json_success($response);
+}
+add_action('wp_ajax_bulk_add_to_cart_ajax', 'bulk_add_to_cart_ajax_handler');
+add_action('wp_ajax_nopriv_bulk_add_to_cart_ajax', 'bulk_add_to_cart_ajax_handler');
+
+// Handle CSV upload and processing (legacy function for non-AJAX fallback)
 function bulk_add_to_cart_process_upload() {
     // Only process on frontend
     if (is_admin()) {
@@ -852,6 +1226,15 @@ function bulk_add_to_cart_changelog_page() {
                 <?php _e('Changelog', 'bulk-add-to-cart'); ?>
             </h2>
             <div style="margin-top: 15px;">
+                <h3><?php echo esc_html('Version 1.2.0'); ?> - <?php echo esc_html('April 1, 2024'); ?></h3>
+                <ul>
+                    <li><?php _e('Added AJAX-powered loading bar with real-time progress tracking', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Enhanced user experience with visual progress indicators during file processing', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Added step-by-step progress messages (Uploading, Processing, Adding to Cart)', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Improved form submission with non-blocking AJAX processing', 'bulk-add-to-cart'); ?></li>
+                    <li><?php _e('Added smooth progress animations and completion feedback', 'bulk-add-to-cart'); ?></li>
+                </ul>
+
                 <h3><?php echo esc_html('Version 1.1.1'); ?> - <?php echo esc_html('April 1, 2024'); ?></h3>
                 <ul>
                     <li><?php _e('Added support for Custom Meta Field Value as an identifier type', 'bulk-add-to-cart'); ?></li>
